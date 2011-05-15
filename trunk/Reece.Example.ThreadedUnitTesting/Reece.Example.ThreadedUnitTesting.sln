@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reece.Example.ThreadedUnitTesting", "Reece.Example.ThreadedUnitTesting.csproj", "{ECF7860E-8440-47D5-BCE3-80C0AB989AC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reece.Example.ThreadedUnitTesting.Tests", "..\Reece.Example.ThreadedUnitTesting.Tests\Reece.Example.ThreadedUnitTesting.Tests.csproj", "{CD39359A-9DFF-468D-910D-CAA55E481F7B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ECF7860E-8440-47D5-BCE3-80C0AB989AC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF7860E-8440-47D5-BCE3-80C0AB989AC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF7860E-8440-47D5-BCE3-80C0AB989AC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECF7860E-8440-47D5-BCE3-80C0AB989AC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD39359A-9DFF-468D-910D-CAA55E481F7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD39359A-9DFF-468D-910D-CAA55E481F7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD39359A-9DFF-468D-910D-CAA55E481F7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD39359A-9DFF-468D-910D-CAA55E481F7B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
