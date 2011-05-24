@@ -95,5 +95,152 @@ namespace Reece.Example.ThreadedUnitTesting.Tests
             mapperThread.Join();
             Assert.AreNotEqual(targetThread.ManagedThreadId, mapperThread.ManagedThreadId);
         }
+
+        [Test]
+        public void Stop_StopsReaderThread_Test()
+        {
+            EventWaitHandle startedHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            EventWaitHandle waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            EventWaitHandle stopHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            int calledCount = 0;
+
+            _readerMock.Setup(x => x.GetAllFactsAsync(It.IsAny<Queue>(), It.IsAny<SignalWork>()))
+                .Callback(() =>
+                              {
+                                  startedHandle.Set();
+                                  stopHandle.WaitOne(5000);
+                                  waitHandle.Set();
+                              });
+
+            _readerMock.Setup(x => x.Stop())
+                .Callback(() =>
+                              {
+                                  ++calledCount;
+                                  stopHandle.Set();
+                              });
+            Thread targetThread = new Thread(target.ProcessFacts);
+            targetThread.Start();
+            startedHandle.WaitOne(1000);
+            target.Stop();
+            waitHandle.WaitOne(4000);
+            targetThread.Join();
+            Assert.AreEqual(1, calledCount);
+        }
+
+        [Test]
+        public void ProcessFacts_RunsUntilStopIsCalled_Test()
+        {
+            EventWaitHandle startedHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            EventWaitHandle stopHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+
+            _readerMock.Setup(x => x.GetAllFactsAsync(It.IsAny<Queue>(), It.IsAny<SignalWork>()))
+                .Callback(() =>
+                {
+                    startedHandle.Set();
+                    stopHandle.WaitOne(15000);
+                });
+
+            _readerMock.Setup(x => x.Stop())
+                .Callback(() => stopHandle.Set());
+            Thread targetThread = new Thread(target.ProcessFacts);
+            targetThread.Start();
+            startedHandle.WaitOne(1000);
+            Thread.Sleep(1000);
+            Assert.IsTrue(targetThread.IsAlive);
+            target.Stop();
+            targetThread.Join();
+        }
+
+        [Test]
+        public void Signal_SignalsAllThreads_Test()
+        {
+            object locker = new object();
+            int counter = 0;
+
+            EventWaitHandle writeStop = new EventWaitHandle(false, EventResetMode.AutoReset);
+            _writerMock.Setup(x => x.PostProductionStopsAsync(It.IsAny<Queue>(), It.IsAny<SignalWork>()))
+                .Callback(() =>
+                              {
+                                  lock (locker)
+                                  {
+                                      ++counter;
+                                      Monitor.Pulse(locker);
+                                  }
+                                  writeStop.WaitOne(30000);
+                              });
+            _writerMock.Setup(x => x.Stop())
+                .Callback(() => writeStop.Set());
+            EventWaitHandle mapperStop = new EventWaitHandle(false, EventResetMode.AutoReset);
+            _mapperMock.Setup(x => x.CalcProductionStopsAsync(It.IsAny<Queue>(), It.IsAny<Queue>(), It.IsAny<SignalWork>()))
+                .Callback(() =>
+                {
+                    lock (locker)
+                    {
+                        ++counter;
+                        Monitor.Pulse(locker);
+                    }
+                    mapperStop.WaitOne(30000);
+                });
+            _mapperMock.Setup(x => x.Stop())
+                .Callback(() => mapperStop.Set());
+            EventWaitHandle readStop = new EventWaitHandle(false, EventResetMode.AutoReset);
+            _readerMock.Setup(x => x.GetAllFactsAsync(It.IsAny<Queue>(), It.IsAny<SignalWork>()))
+                .Callback(() =>
+                {
+                    lock (locker)
+                    {
+                        ++counter;
+                        Monitor.Pulse(locker);
+                    }
+                    readStop.WaitOne(30000);
+                });
+            _readerMock.Setup(x => x.Stop())
+                .Callback(() => readStop.Set());
+
+            int calledCount = 0;
+
+            _readerMock.Setup(x => x.Signal())
+                .Callback(() =>
+                              {
+                                  lock (locker)
+                                  {
+                                      calledCount++;
+                                      Monitor.Pulse(locker);
+                                  }
+                              });
+            _mapperMock.Setup(x => x.Signal())
+                .Callback(() =>
+                {
+                    lock (locker)
+                    {
+                        calledCount++;
+                        Monitor.Pulse(locker);
+                    }
+                });
+            _writerMock.Setup(x => x.Signal())
+                .Callback(() =>
+                {
+                    lock (locker)
+                    {
+                        calledCount++;
+                        Monitor.Pulse(locker);
+                    }
+                });
+
+            Thread targetThread = new Thread(target.ProcessFacts);
+            targetThread.Start();
+            lock (locker)
+            {
+                while ( counter != 3)
+                {
+                    Monitor.Wait(locker);
+                }
+            }
+
+            target.Signal();
+            target.Stop();
+            targetThread.Join();
+            Assert.AreEqual(3, calledCount);
+        }
     }
 }
